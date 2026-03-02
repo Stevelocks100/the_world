@@ -19,6 +19,15 @@
 			{
 				"directory": "pre_flash",
 				"min_format": 80,
+				"max_format": 81,
+				"formats": {
+					"min_inclusive": 80,
+					"max_inclusive": 81
+				}
+			},
+			{
+				"directory": "pre_damage_type",
+				"min_format": 80,
 				"max_format": 88,
 				"formats": {
 					"min_inclusive": 80,
