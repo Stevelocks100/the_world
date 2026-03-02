@@ -1,2 +1,44 @@
-# theworld
-Adds Dio's stand "The World"
+# The World Stand
+***
+
+This datapack adds "The World" from Jojo's Bizarre Adventure into Minecraft, with several other additions to make it marginally survival friendly. The World has the ability to stop time, teleport behind another player (as if time froze), and do the "Muda Muda" thing.
+This datapack also includes a stand arrow for obtaining the stand, and throwing knives.
+
+![Stand arrow that's also a header](https://cdn.modrinth.com/data/cached_images/3e32c9f113513f4d6c2582e768dfa37a930b764f.png)
+
+## The actual stand
+***
+
+After obtaining the stand, it cannot be dropped, but also cannot be re-obtained if put into a chest or otherwise destroyed until you respawn. It will not drop on death, so that only players who have sufficient spiritual strength will be the only ones with the stand.
+
+All abilities have different cooldowns and are activated via different combinations including holding right click:
+- Right Click = Teleport behind a player
+  - This has very limited range and requires a lot of accuracy for facing the targetted player.
+- Right Click + Sneak = Time freeze
+  - The flagship ability! Time will remain frozen for everyone that isn't a stand user for around 10 seconds. During this time, every frozen entity cannot move/place/break and will be granted resistance 2 for the duration of the effect. After time unfreezes, they will retain the velocity they had before being frozen.
+- Right Click + Sprint = Muda Muda
+  - Extremely close range barrage of punches and will deal around 40 damage over the course of 5 seconds. The user gets slowness during this attack, meaning it can be relatively easily avoided. The range is around 2 blocks from the fists of The World. The final punch also launches entities away.
+
+
+## Stand Arrow
+***
+
+![Recipe for the stand arrow](https://cdn.modrinth.com/data/cached_images/45c7d9a2403ec1114ca59f253b87ad14017b5dae.png)
+
+When shot at another player, that player will take a lot of damage in a very short period of time. This attack also in theory bypasses any armor worn. If the player successfully survives, they will obtain The World stand.
+Yeah that's about it, there's not really anything else to it lol
+
+
+## Throwable Knife
+***
+
+This item has some attack damage with fast attack speed, and can be stacked up to 16. When thrown, it will deal 4 damage, and will remain in the ground of 20 seconds if it misses. This item also has 0 attack cooldown, meaning if 5 knives are thrown at a player at the same time, 20 damage will be dealt to that player.
+
+By putting an iron ingot on top of a stick in any crafting menu, 3 throwable knives will be given.
+
+This was made specifically for being thrown in frozen time, since many knives can be thrown and will damage the target all at once.
+
+
+### Additional Credits
+- [MulverineX - Player Motion](https://modrinth.com/datapack/player_motion)
+- Jojo's Bizarre Adventure for the SFX
