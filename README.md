@@ -6,7 +6,7 @@ Compatible for Minecraft Java 1.21.6 to 1.21.11
 This datapack adds "The World" from Jojo's Bizarre Adventure into Minecraft, with several other additions to make it marginally survival friendly. The World has the ability to stop time, teleport behind another player (as if time froze), and do the "Muda Muda" thing.
 This datapack also includes a stand arrow for obtaining the stand, and throwing knives.
 
-![Stand arrow that's also a header](https://cdn.modrinth.com/data/cached_images/3e32c9f113513f4d6c2582e768dfa37a930b764f.png)
+![Stand arrow that's also a header](https://cdn.modrinth.com/data/cached_images/f6886f40f6c68b8c07817af4ee9ce37272681397.png)
 
 ## The actual stand
 ***
@@ -40,6 +40,7 @@ By putting an iron ingot on top of a stick in any crafting menu, 3 throwable kni
 
 This was made specifically for being thrown in frozen time, since many knives can be thrown and will damage the target all at once.
 
+## Warning - This datapack DOES NOT work with shaders!!!
 
 ### Additional Credits
 - [MulverineX - Player Motion](https://modrinth.com/datapack/player_motion)
