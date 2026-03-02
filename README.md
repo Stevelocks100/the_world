@@ -1,6 +1,8 @@
 # The World Stand
 ***
 
+Compatible for Minecraft Java 1.21.6 to 1.21.11
+
 This datapack adds "The World" from Jojo's Bizarre Adventure into Minecraft, with several other additions to make it marginally survival friendly. The World has the ability to stop time, teleport behind another player (as if time froze), and do the "Muda Muda" thing.
 This datapack also includes a stand arrow for obtaining the stand, and throwing knives.
 
