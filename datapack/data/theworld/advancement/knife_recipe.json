@@ -1,0 +1,1 @@
+{"criteria":{"a":{"trigger": "minecraft:inventory_changed","conditions":{"items": [{"items": "iron_ingot"}]}},"b":{"trigger": "minecraft:inventory_changed","conditions":{"items": [{"items": "stick"}]}}},"requirements": [["a"],["b"]],"rewards":{"recipes": ["theworld:knife"]}}

@@ -1,0 +1,1 @@
+{"criteria":{"a":{"trigger": "minecraft:consume_item","conditions":{"item":{"items": "beetroot_soup","components":{"minecraft:item_model": "theworld:knife"}}}}},"requirements": [["a"]],"rewards":{"function": "theworld:knife/throw"}}

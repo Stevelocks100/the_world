@@ -1,0 +1,1 @@
+{"criteria":{"a":{"trigger": "minecraft:consume_item","conditions":{"player":{"type_specific":{"type": "minecraft:player","input":{"sneak": true}}},"item":{"items": "minecraft:beetroot_soup","components":{"minecraft:item_model":"theworld:armor_stand"}}}}},"requirements": [["a"]],"rewards":{"function": "theworld:stand_item/special_use"}}

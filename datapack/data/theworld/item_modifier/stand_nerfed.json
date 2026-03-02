@@ -1,0 +1,73 @@
+[
+    {
+        "function": "minecraft:set_components",
+        "components": {
+            "minecraft:use_cooldown": {
+                "seconds": 600,
+                "cooldown_group": "theworld:time_freeze"
+            }
+        },
+        "conditions": [
+            {
+                "condition": "minecraft:entity_properties",
+                "entity": "this",
+                "predicate": {
+                    "type_specific": {
+                        "type": "minecraft:player",
+                        "input": {
+                            "sneak": true
+                        }
+                    }
+                }
+            }
+        ]
+    },
+    {
+        "function": "minecraft:set_components",
+        "components": {
+            "minecraft:use_cooldown": {
+                "seconds": 150,
+                "cooldown_group": "theworld:teleport"
+            }
+        },
+        "conditions": [
+            {
+                "condition": "minecraft:entity_properties",
+                "entity": "this",
+                "predicate": {
+                    "type_specific": {
+                        "type": "minecraft:player",
+                        "input": {
+                            "sneak": false,
+                            "sprint": false
+                        }
+                    }
+                }
+            }
+        ]
+    },
+    {
+        "function": "minecraft:set_components",
+        "components": {
+            "minecraft:use_cooldown": {
+                "seconds": 250,
+                "cooldown_group": "theworld:muda_muda"
+            }
+        },
+        "conditions": [
+            {
+                "condition": "minecraft:entity_properties",
+                "entity": "this",
+                "predicate": {
+                    "type_specific": {
+                        "type": "minecraft:player",
+                        "input": {
+                            "sneak": false,
+                            "sprint": true
+                        }
+                    }
+                }
+            }
+        ]
+    }
+]

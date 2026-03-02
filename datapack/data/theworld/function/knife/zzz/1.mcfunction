@@ -1,0 +1,3 @@
+# Generated with MC-Build
+
+$summon snowball ~ ~ ~ {Tags:["theworld.knife","theworld.knife.snowball"],Item:{id:"iron_ingot",count:1,components:{"minecraft:item_model":"theworld:empty"}},Passengers:[{id:"item_display",Tags:["theworld.knife","theworld.knife.display"],transformation:{translation: [0.0f, 0.0f, 0.0f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [0.7,0.7,0.7], left_rotation: [0.65328145f, -0.2705981f, -0.65328145f, 0.2705981f]},teleport_duration:1,item:{id:"beetroot_soup",count:1,components:{"minecraft:item_model":"theworld:knife"}}}],Motion:$(motion)}

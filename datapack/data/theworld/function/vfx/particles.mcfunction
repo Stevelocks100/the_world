@@ -1,0 +1,29 @@
+# Generated with MC-Build
+
+particle minecraft:end_rod ^ ^0 ^0 0 0 0 0 1 normal @a
+particle minecraft:end_rod ^ ^0.05910404133226791 ^0.3 0 0 0 0 1 normal @a
+particle minecraft:end_rod ^ ^0.11292849467900708 ^0.6 0 0 0 0 1 normal @a
+particle minecraft:end_rod ^ ^0.15666538192549667 ^0.8999999999999999 0 0 0 0 1 normal @a
+particle minecraft:end_rod ^ ^0.18640781719344526 ^1.2 0 0 0 0 1 normal @a
+particle minecraft:end_rod ^ ^0.1994989973208109 ^1.5 0 0 0 0 1 normal @a
+particle minecraft:end_rod ^ ^0.19476952617563903 ^1.8 0 0 0 0 1 normal @a
+particle minecraft:end_rod ^ ^0.17264187332977474 ^2.1 0 0 0 0 1 normal @a
+particle minecraft:end_rod ^ ^0.1350926361102302 ^2.4 0 0 0 0 1 normal @a
+particle minecraft:end_rod ^ ^0.08547597604676603 ^2.6999999999999997 0 0 0 0 1 normal @a
+particle minecraft:end_rod ^ ^0.028224001611973533 ^2.9999999999999996 0 0 0 0 1 normal @a
+particle minecraft:end_rod ^ ^-0.031549138828649556 ^3.2999999999999994 0 0 0 0 1 normal @a
+particle minecraft:end_rod ^ ^-0.08850408865897033 ^3.599999999999999 0 0 0 0 1 normal @a
+particle minecraft:end_rod ^ ^-0.13755323183679463 ^3.899999999999999 0 0 0 0 1 normal @a
+particle minecraft:end_rod ^ ^-0.17431515448271756 ^4.199999999999999 0 0 0 0 1 normal @a
+particle minecraft:end_rod ^ ^-0.19550602353301938 ^4.499999999999999 0 0 0 0 1 normal @a
+particle minecraft:end_rod ^ ^-0.19923292176716817 ^4.799999999999999 0 0 0 0 1 normal @a
+particle minecraft:end_rod ^ ^-0.18516293646554655 ^5.099999999999999 0 0 0 0 1 normal @a
+particle minecraft:end_rod ^ ^-0.15455289751119766 ^5.399999999999999 0 0 0 0 1 normal @a
+particle minecraft:end_rod ^ ^-0.11013710851952782 ^5.699999999999998 0 0 0 0 1 normal @a
+particle minecraft:end_rod ^ ^-0.055883099639785515 ^5.999999999999998 0 0 0 0 1 normal @a
+particle minecraft:end_rod ^ ^0.003362780096869587 ^6.299999999999998 0 0 0 0 1 normal @a
+particle minecraft:end_rod ^ ^0.06230827270267523 ^6.599999999999998 0 0 0 0 1 normal @a
+particle minecraft:end_rod ^ ^0.1156879528776396 ^6.899999999999998 0 0 0 0 1 normal @a
+particle minecraft:end_rod ^ ^0.1587335727698303 ^7.1999999999999975 0 0 0 0 1 normal @a
+particle minecraft:end_rod ^ ^0.1875999953549476 ^7.499999999999997 0 0 0 0 1 normal @a
+particle minecraft:end_rod ^ ^0.19970866907492096 ^7.799999999999997 0 0 0 0 1 normal @a

@@ -1,0 +1,896 @@
+function load minecraft:load{
+    # you can use MC-Build without its internal scoreboard but this will limit the available features
+
+    forceload add -1 -1 1 1
+
+    scoreboard objectives add mcb.internal dummy
+    scoreboard objectives add theworld.main dummy
+    scoreboard objectives add theworld.rot_x dummy
+    scoreboard objectives add theworld.rot_y dummy
+
+    scoreboard objectives add theworld.pos_x dummy
+    scoreboard objectives add theworld.pos_y dummy
+    scoreboard objectives add theworld.pos_z dummy
+
+    scoreboard objectives add theworld.motion_x dummy
+    scoreboard objectives add theworld.motion_y dummy
+    scoreboard objectives add theworld.motion_z dummy
+
+    scoreboard objectives add theworld.deaths deathCount
+
+    scoreboard objectives add theworld.nerfed dummy
+
+    scoreboard objectives add theworld.knife_timer dummy
+
+    data modify storage theworld:main replace_item set value {id: "minecraft:beetroot_soup", count: 1, components: {"minecraft:item_name": {color: "white", font: "theworld:main", shadow_color: 0, text: ""}, "minecraft:item_model": "theworld:armor_stand", "minecraft:enchantment_glint_override": 1b, "minecraft:use_cooldown": {cooldown_group: "minecraft:theworld", seconds: 15.0f}, "minecraft:consumable": {consume_seconds: 0.5f, sound: "minecraft:intentionally_empty", has_consume_particles: 0b, animation: "none"}, "!minecraft:food": {}}}
+}
+
+function tick minecraft:tick{
+    tag @a remove theworld.potential_target
+    tag @a[gamemode=!creative,gamemode=!spectator] add theworld.potential_target
+
+    tag @a[tag=!theworld.potential_target] remove theworld.living_entity
+    tag @a[tag=theworld.potential_target] add theworld.living_entity
+    execute as @e[tag=!theworld.checked] run {
+        execute if data entity @s Health run tag @s add theworld.living_entity
+        tag @s add theworld.checked
+    }
+
+    execute as @a[tag=theworld.frozen] at @s run {
+        effect give @s resistance 1 1 true
+        execute store result storage theworld:main freeze_pos.rot_x float 1 run scoreboard players get @s theworld.rot_x
+        execute store result storage theworld:main freeze_pos.rot_y float 1 run scoreboard players get @s theworld.rot_y
+
+        execute store result storage theworld:main freeze_pos.pos_x float 0.1 run scoreboard players get @s theworld.pos_x
+        execute store result storage theworld:main freeze_pos.pos_y float 0.1 run scoreboard players get @s theworld.pos_y
+        execute store result storage theworld:main freeze_pos.pos_z float 0.1 run scoreboard players get @s theworld.pos_z
+        block { with storage theworld:main freeze_pos
+            #$execute positioned $(pos_x) $(pos_y) $(pos_z) rotated $(rot_x) $(rot_y) run tp @s ~ ~ ~ ~ ~
+            $tp @s $(pos_x) $(pos_y) $(pos_z) $(rot_x) $(rot_y)
+        }
+    
+    }
+
+    execute if entity @n[tag=theworld.frozen,type=!player] as @e[tag=theworld.frozen,type=!player] at @s run {
+        effect give @s resistance 1 1 true
+        data modify entity @s Pos set from entity @s data.theworld.Pos
+        data modify entity @s Motion set value [0,0,0]
+        data modify entity @s Rotation set from entity @s data.theworld.Rotation
+        data modify entity @s active_effects set from entity @s data.theworld.active_effects
+    
+    }
+
+    execute as @e[tag=theworld.knife.display] at @s rotated as @s run {
+        
+        execute if entity @s[tag=theworld.knife.landed] run return run {
+            scoreboard players add @s theworld.knife_timer 1
+            kill @s[scores={theworld.knife_timer=400..}]
+        }
+
+        execute unless predicate {"condition":"minecraft:entity_properties","entity":"this","predicate":{"vehicle":{}}} run return run {
+            tp @s ^ ^ ^1.0
+            tag @s add theworld.current_knife
+            execute at @s positioned ~-0.75 ~-0.75 ~-0.75 as @n[type=!item,tag=!theworld.current_knife,tag=theworld.living_entity,distance=0..30,dx=0.5,dy=0.5,dz=0.5] run return run {
+                damage @s 4 theworld:knife_projectile
+
+                kill @n[tag=theworld.current_knife]
+            }
+            tag @s remove theworld.current_knife
+            tag @s add theworld.knife.landed
+        }
+        execute on vehicle if entity @s[tag=theworld.frozen] run return 0
+        execute on vehicle run {
+            data modify storage theworld:main knife.dir.x set from entity @s Motion[0]
+            data modify storage theworld:main knife.dir.y set from entity @s Motion[1]
+            data modify storage theworld:main knife.dir.z set from entity @s Motion[2]
+        }
+
+        block { with storage theworld:main knife.dir
+            
+            $execute positioned 0.0 0.0 0.0 facing $(x) $(y) $(z) run rotate @s ~ ~
+        }
+    }
+
+    
+    execute as @n[tag=theworld.shader_entity,scores={theworld.main=1..}] at @s run {
+        execute store result storage theworld:main particles.x float 0.1 run random value -200..200
+        execute store result storage theworld:main particles.y float 0.1 run random value 5..55
+        execute store result storage theworld:main particles.z float 0.1 run random value -200..200
+        execute store result storage theworld:main particles.rot int 1 run random value -180..179
+        execute if predicate {"condition":"minecraft:random_chance","chance":0.6} run { with storage theworld:main particles
+            $execute positioned ~$(x) ~$(y) ~$(z) rotated $(rot) 0 run function vfx/particles
+        }
+        
+        scoreboard players add @s theworld.main 1
+        execute if score @s theworld.main matches 230 run playsound theworld:ability.unfreeze player @a[distance=0..64] ~ ~ ~ 4.0 1.0 0.0
+        execute if score @s theworld.main matches 253 run function freeze_time/disable/main
+        execute if score @s theworld.main matches 253 run return run kill @s
+
+
+        block {
+            tag @a[tag=theworld.immune] remove theworld.potential_target
+            tag @a[tag=theworld.stand_user] remove theworld.potential_target
+            function freeze_time/enable/main
+        }
+    }
+
+
+    execute as @e[type=item,nbt={Item:{components:{"minecraft:item_model":"theworld:armor_stand"}},Age:0s}] at @s run {
+
+        tag @s add theworld.current_item
+        execute on origin run function stand_item/give
+        execute on origin run kill @n[tag=theworld.current_item,distance=0..5]
+        tag @s remove theworld.current_item
+    }
+
+    execute as @a[scores={theworld.deaths=1..}] at @s run tag @s[tag=theworld.stand_user] add theworld.give_back
+    kill @e[type=item,nbt={Item:{components:{"minecraft:item_model":"theworld:armor_stand"}},Age:0s}]
+
+    execute as @a[tag=theworld.give_back] run {
+        execute store result score health theworld.main run data get entity @s Health
+        execute unless score health theworld.main matches 1.. run return 0
+        tag @s remove theworld.give_back
+        execute if data entity @s Inventory[{components:{"minecraft:item_model":"theworld:armor_stand"}}] run return 0
+        function stand_item/give
+        
+    }
+
+    execute as @a[tag=theworld.stand_arrow_effect,scores={theworld.deaths=1..}] run {
+        tag @s remove theworld.stand_arrow_effect
+        effect clear @s unluck
+    }
+
+    scoreboard players set @a theworld.deaths 0
+
+    
+
+    clear @a[tag=!theworld.stand_user,gamemode=!creative,gamemode=!spectator] *[item_model="theworld:armor_stand"]
+
+
+    execute as @a[predicate=theworld:stand_arrow2] run {
+        effect clear @s unluck
+        effect give @s[tag=!theworld.stand_user] unluck 3 51 true
+    }
+    execute as @a[tag=theworld.stand_arrow_effect] at @s rotated as @s run function stand_arrow/infect_tick
+    execute as @a[predicate=theworld:stand_arrow,tag=!theworld.stand_arrow_effect] at @s rotated as @s run function stand_arrow/infect_tick
+    
+    execute as @e[tag=aj.the_world.root,tag=aj.the_world.animation.muda_muda.playing] at @s rotated as @s run function muda_muda/tick
+
+}
+
+dir freeze_time {
+    dir enable {
+        function player {
+            execute store result score @s theworld.rot_x run data get entity @s Rotation[0]
+            execute store result score @s theworld.rot_y run data get entity @s Rotation[1]
+
+            execute store result score @s theworld.pos_x run data get entity @s Pos[0] 10
+            execute store result score @s theworld.pos_y run data get entity @s Pos[1] 10
+            execute store result score @s theworld.pos_z run data get entity @s Pos[2] 10
+
+            execute store result score @s theworld.motion_x run data get entity @s Motion[0] 10000
+            execute store result score @s theworld.motion_y run data get entity @s Motion[1] 10000
+            execute store result score @s theworld.motion_z run data get entity @s Motion[2] 10000
+
+            tag @s add theworld.frozen
+            attribute @s gravity modifier add theworld:freeze_time -1 add_multiplied_total
+            attribute @s movement_speed modifier add theworld:freeze_time -99 add_multiplied_total
+            attribute @s jump_strength modifier add theworld:freeze_time -99 add_multiplied_total
+            attribute @s block_interaction_range modifier add theworld:freeze_time -99 add_multiplied_total
+            attribute @s entity_interaction_range modifier add theworld:freeze_time -99 add_multiplied_total
+            effect give @s mining_fatigue 30 234 true
+        }
+
+        function entity {
+            tag @s add theworld.frozen
+
+            attribute @s gravity modifier add theworld:freeze_time -1 add_multiplied_total
+            attribute @s movement_speed modifier add theworld:freeze_time -99 add_multiplied_total
+            attribute @s jump_strength modifier add theworld:freeze_time -99 add_multiplied_total
+            REPEAT (["Silent","NoGravity","NoAI"]) as i {
+                execute unless data entity @s <%i%> run data modify entity @s data.theworld.<%i%> set value 0b
+                execute if data entity @s <%i%> run data modify entity @s data.theworld.<%i%> set from entity @s <%i%>
+                data modify entity @s <%i%> set value 1b
+            }
+            REPEAT (["Pos","Rotation","Motion","active_effects"]) as i {
+                data modify entity @s data.theworld.<%i%> set from entity @s <%i%>
+            }
+        }
+
+        function main {
+            # execute if entity @n[tag=theworld.frozen] run return 0
+            execute as @a[distance=0..32,tag=theworld.potential_target,tag=!theworld.frozen] at @s rotated as @s run function player
+            execute as @e[type=!player,distance=0..32,tag=!aj.global.entity,tag=!theworld.frozen] at @s rotated as @s run function entity
+        }
+    }
+    dir disable {
+        function player {
+            tag @s remove theworld.frozen
+            attribute @s gravity modifier remove theworld:freeze_time
+            attribute @s movement_speed modifier remove theworld:freeze_time
+            attribute @s jump_strength modifier remove theworld:freeze_time
+            attribute @s block_interaction_range modifier remove theworld:freeze_time
+            attribute @s entity_interaction_range modifier remove theworld:freeze_time
+            effect clear @s mining_fatigue
+
+            scoreboard players operation $x player_motion.api.launch = @s theworld.motion_x
+            scoreboard players operation $y player_motion.api.launch = @s theworld.motion_y
+            scoreboard players operation $z player_motion.api.launch = @s theworld.motion_z
+            function player_motion:api/launch_xyz
+        }
+
+        function entity {
+            tag @s remove theworld.frozen
+
+            attribute @s gravity modifier remove theworld:freeze_time
+            attribute @s movement_speed modifier remove theworld:freeze_time
+            attribute @s jump_strength modifier remove theworld:freeze_time
+            REPEAT (["Silent","NoGravity","NoAI"]) as i {
+                data modify entity @s <%i%> set from entity @s data.theworld.<%i%>
+                data remove entity @s data.theworld.<%i%>
+            }
+            data modify entity @s Motion set from entity @s data.theworld.Motion
+            REPEAT (["Pos","Rotation","Motion","active_effects"]) as i {
+                data remove entity @s data.theworld.<%i%>
+            }
+        }
+        function main {
+            execute as @a[tag=theworld.frozen] at @s rotated as @s run function player
+            execute as @e[tag=theworld.frozen,type=!player] at @s rotated as @s run function entity
+        }
+    }
+}
+
+dir muda_muda {
+
+    function tick {
+        block { with entity @s data
+            $execute at @p[nbt={UUID:$(owner_uuid)}] rotated as @p[nbt={UUID:$(owner_uuid)}] run tp @s ~ ~ ~ ~ 0
+            $effect give @p[nbt={UUID:$(owner_uuid)}] slowness 1 3 true
+        }
+    }
+
+    function punch {
+        
+        block { with entity @s data
+            $tag @p[nbt={UUID:$(owner_uuid)}] add theworld.current_owner
+        }
+
+        execute positioned ~-0.75 ~-0.75 ~-0.75 as @e[tag=theworld.living_entity,dx=0.5,dy=0.5,dz=0.5,tag=!theworld.current_owner,distance=0..10] run {
+            particle damage_indicator ~ ~ ~ 0.3 0.3 0.3 0 1 normal @a
+            attribute @s knockback_resistance modifier add theworld:muda_muda 1 add_value
+            damage @s 1 theworld:the_world by @n[tag=aj.the_world.root] from @p[tag=theworld.current_owner]
+            attribute @s knockback_resistance modifier remove theworld:muda_muda
+        } 
+        tag @p[tag=theworld.current_owner] remove theworld.current_owner
+        particle crit ~ ~ ~ 0.1 0.1 0.1 0 2 normal @a
+        playsound minecraft:entity.player.attack.strong player @a[distance=0..32] ~ ~ ~ 1.0 1.0 0.0
+    }
+
+    function big_punch {
+        particle minecraft:flash{color:[1,1,1,1]} ~ ~ ~ 0 0 0 0 1 normal @a
+        particle minecraft:explosion ~ ~ ~ 0.5 0.5 0.5 0 6 normal @a
+        playsound theworld:ability.punch_end player @a[distance=0..32] ~ ~ ~ 2.0 0.8 0.0
+        
+        block { with entity @s data
+            $tag @p[nbt={UUID:$(owner_uuid)}] add theworld.current_owner
+        }
+
+        execute positioned ~-0.75 ~-0.75 ~-0.75 as @e[tag=theworld.living_entity,dx=0.5,dy=0.5,dz=0.5,tag=!theworld.current_owner,distance=0..10] run {
+            attribute @s knockback_resistance modifier add theworld:muda_muda 1 add_value
+            damage @s 15 theworld:the_world by @n[tag=aj.the_world.root] from @p[tag=theworld.current_owner]
+            attribute @s knockback_resistance modifier remove theworld:muda_muda
+        } 
+        tag @p[tag=theworld.current_owner] remove theworld.current_owner
+        
+        
+    }
+    function launch_punch {
+
+        particle minecraft:flash{color:[1,1,1,1]} ~ ~ ~ 0 0 0 0 1 normal @a
+        particle minecraft:explosion ~ ~ ~ 0.5 0.5 0.5 0 6 normal @a
+        playsound theworld:ability.punch_end player @a[distance=0..32] ~ ~ ~ 2.0 0.8 0.0
+
+        execute positioned ~-0.75 ~-0.75 ~-0.75 as @e[tag=theworld.living_entity,dx=0.5,dy=0.5,dz=0.5,tag=!theworld.current_owner,distance=0..10] run {
+            execute if entity @s[type=player] run {
+                scoreboard players set $strength player_motion.api.launch -18000
+            execute at @s anchored eyes facing entity @n[tag=aj.the_world.root] feet run function player_motion:api/launch_looking
+            }
+            execute unless entity @s[type=player] run {
+                tag @s add the_world.current_entity
+                execute at @s anchored eyes facing entity @n[tag=aj.the_world.root] feet positioned 0.0 0.0 0.0 positioned ^ ^ ^-1.8 summon marker run {
+                    data modify entity @n[tag=the_world.current_entity] Motion set from entity @s Pos
+                    kill @s
+                }
+                tag @s remove the_world.current_entity
+            }
+            
+        } 
+
+        
+        
+    }
+
+    function summon {
+        execute if entity @s[name="Stevelocks100"] rotated ~ 0 run function animated_java:the_world/summon {args:{animation:'muda_muda',start_animation:true,variant:"steve"}}
+        execute unless entity @s[name="Stevelocks100"] rotated ~ 0 run function animated_java:the_world/summon {args:{animation:'muda_muda',start_animation:true}}
+        data modify entity @n[tag=aj.the_world.root,distance=0..0.1,tag=!theworld.muda_muda] data.owner_uuid set from entity @s UUID
+        tag @n[tag=aj.the_world.root,distance=0..0.1,tag=!theworld.muda_muda] add theworld.muda_muda
+    }
+}
+
+dir teleport {
+    function blink {
+        title @s times 0 0 10
+        title @s title {font:"theworld:main",text:"\uF001",color:"black"}
+    }
+
+    function main {
+        
+        
+        function find_player
+        execute unless entity @p[tag=theworld.found_player] run return 0
+        particle minecraft:reverse_portal ~ ~1 ~ 0.3 0.6 0.3 0 10 normal @a
+        playsound theworld:ability.teleport player @a[distance=0..32] ~ ~ ~ 2.0 1.0 0.0
+        execute as @a[distance=0..32] run function blink
+        execute at @p[tag=theworld.found_player] rotated as @p[tag=theworld.found_player] rotated ~ 0 positioned ^ ^ ^-1.5 run tp @s ~ ~ ~ ~ ~
+        tag @p[tag=theworld.found_player] remove theworld.found_player
+    }
+
+    function find_player {
+        scoreboard players set raycast theworld.main 0
+        tag @s add theworld.current_player
+        execute positioned ~ ~1.2 ~ rotated as @s run {
+            scoreboard players add raycast theworld.main 1
+            execute as @p[tag=!theworld.current_player,tag=theworld.potential_target,distance=0..4] run return run tag @s add theworld.found_player
+            execute if score raycast theworld.main matches ..20 positioned ^ ^ ^1 run function ^0
+        }
+        tag @s remove theworld.current_player
+    }
+}
+
+dir vfx {
+    function summon {
+        kill @e[tag=theworld.shader_entity]
+        summon item_display ~ ~ ~ {Tags:["theworld.shader_entity"],item:{id:"minecraft:iron_ingot",count:1,components:{"minecraft:item_model":"theworld:theworld_effect"}},Glowing:1b}
+    }
+    function activate {
+        playsound theworld:ability.time_freeze player @a[distance=0..64] ~ ~ ~ 4.0 1.0 0.0
+        data modify entity @n[tag=theworld.shader_entity,distance=0..40] item.components."minecraft:custom_model_data".colors set value [[0.0,0.0,0.0]]
+        scoreboard players set @n[tag=theworld.shader_entity,distance=0..40] theworld.main 1
+
+        tag @a[tag=theworld.immune] remove theworld.potential_target
+        tag @a[tag=theworld.stand_user] remove theworld.potential_target
+        function ../freeze_time/enable/main
+    }
+    function deactivate {
+        data modify entity @n[tag=theworld.shader_entity,distance=0..40] item.components."minecraft:custom_model_data".colors set value [[1.0,1.0,1.0]] 
+    }
+
+    function particles {
+        REPEAT (0,8,0.3) as x {
+            particle minecraft:end_rod ^ ^<%Math.sin(x) / 5 %> ^<%x%> 0 0 0 0 1 normal @a
+        }
+        
+    }
+}
+
+
+function aj_summon {
+    execute if entity @s[name="Stevelocks100"] rotated ~ 0 positioned ^-0.5 ^0.7 ^-1 run return run function animated_java:the_world/summon {args:{animation:"anim",start_animation:true,variant:"steve"}}
+    execute rotated ~ 0 positioned ^-0.5 ^0.7 ^-1 run return run function animated_java:the_world/summon {args:{animation:"anim",start_animation:true}}
+}
+
+
+dir stand_arrow {
+    function give {
+        give @s tipped_arrow[item_model="theworld:stand_arrow",item_name="Stand Arrow",lore=["It looks very old."],potion_contents={custom_effects:[{id:"unluck",amplifier:50,duration:1000,show_icon:false,show_particles:false}],custom_name:"standarrow"},tooltip_display={hidden_components:["potion_contents"]},max_stack_size=1]
+    }
+
+    function infect_tick {
+        execute unless entity @s[tag=theworld.stand_arrow_effect] run playsound entity.zombie_villager.cure player @a[distance=0..32] ~ ~ ~ 1.5 1.0 0.0
+        tag @s add theworld.stand_arrow_effect
+        attribute @s knockback_resistance modifier add theworld 1 add_value
+        damage @s 0.45 theworld:spiritual_strength
+        attribute @s knockback_resistance modifier remove theworld
+        execute if predicate {"condition":"minecraft:random_chance","chance":0.35} run particle electric_spark ~ ~1 ~ 0.3 0.6 0.3 0.1 3 normal @a
+        execute if predicate {"condition":"minecraft:random_chance","chance":0.5} run particle enchant ~ ~1 ~ 0.6 0.6 0.6 0.1 6 normal @a
+        execute if predicate {"condition":"minecraft:random_chance","chance":0.25} run particle sculk_charge_pop ~ ~ ~ 1 0 1 0 5 normal @a
+        execute if predicate {"condition":"minecraft:random_chance","chance":0.2} run particle trial_spawner_detection_ominous ~ ~1 ~ 1 0.6 1 0 5 normal @a
+
+        execute unless predicate theworld:stand_arrow if entity @s[tag=theworld.stand_arrow_effect] run {
+            
+            function ../stand_item/give
+            tag @s remove theworld.stand_arrow_effect
+            particle totem_of_undying ~ ~1 ~ 0.1 0.1 0.1 0.3 50 normal @a
+            playsound entity.evoker.prepare_summon player @a[distance=0..32] ~ ~ ~ 1.5 1.0 0.0
+        }
+    }
+}
+
+predicate stand_arrow {
+	"condition": "minecraft:entity_properties",
+	"entity": "this",
+	"predicate": {
+		"effects": {
+			"minecraft:unluck": {
+				"amplifier": 51
+			}
+		}
+	}
+}
+predicate stand_arrow2 {
+	"condition": "minecraft:entity_properties",
+	"entity": "this",
+	"predicate": {
+		"effects": {
+			"minecraft:unluck": {
+				"amplifier": 50
+			}
+		}
+	}
+}
+
+dir stand_item {
+    function give {
+        tag @s add theworld.stand_user
+        give @s beetroot_soup[item_model="theworld:armor_stand",item_name={font:"theworld:main",text:"\uF000",shadow_color:0,color:"white"},!food,consumable={animation:"none",consume_seconds:0.5,has_consume_particles:false,sound:"intentionally_empty"},enchantment_glint_override=true,use_cooldown={cooldown_group:"theworld",seconds:15},!use_remainder,lore=["",{italic:true,text:"The most powerful stand."},"","",{color:"light_purple",bold:true,text:"[ Blink ]"},"",{color:"gray",text:"Teleports behind another player you're facing."},"",{color:"gray",text:"15 second cooldown."},"",{color:"gray",text:"Hold right click to activate"},"","",{color:"light_purple",bold:true,text:"[ Freeze ]"},"",{color:"gray",text:"Freezes time within a 32 block radius."},"",{color:"gray",text:"All entities within range get resistance 2"},"",{color:"gray",text:"60 second cooldown."},"",{color:"gray",text:"Hold right click and sneak to activate"},"","",{color:"light_purple",bold:true,text:"[ Muda Muda ]"},"",{color:"gray",text:"Unleashes a barrage of punches."},"",{color:"gray",text:"25 second cooldown."},"",{color:"gray",text:"Hold right click and sprint key to activate"}]]
+
+    }
+
+    function as_player {
+        advancement revoke @s only theworld:player_tick
+        execute if predicate theworld:mainhand_stand run {
+            
+            execute if data entity @s {UUID:[I; 139050071, 1298612555, -1552828644, 1172318740]} unless data entity @s SelectedItem.components."minecraft:custom_model_data"{strings:["stevelocks"]} run item modify entity @s weapon.mainhand theworld:stevelocks_stand
+            execute unless data entity @s {UUID:[I; 139050071, 1298612555, -1552828644, 1172318740]} if data entity @s SelectedItem.components."minecraft:custom_model_data"{strings:["stevelocks"]} run item modify entity @s weapon.mainhand theworld:normal_stand
+            item modify entity @s[tag=!theworld.nerfed] weapon.mainhand theworld:stand
+            item modify entity @s[tag=theworld.nerfed] weapon.mainhand theworld:stand_nerfed
+            # execute unless data entity @s SelectedItem.components."minecraft:use_remainder" run function fill_remainder {slot:"weapon.mainhand"}
+        }
+
+        execute if predicate theworld:offhand_stand run {
+            execute if data entity @s {UUID:[I; 139050071, 1298612555, -1552828644, 1172318740]} unless data entity @s equipment.offhand.components."minecraft:custom_model_data"{strings:["stevelocks"]} run item modify entity @s weapon.offhand theworld:stevelocks_stand
+            execute unless data entity @s {UUID:[I; 139050071, 1298612555, -1552828644, 1172318740]} if data entity @s equipment.offhand.components."minecraft:custom_model_data"{strings:["stevelocks"]} run item modify entity @s weapon.offhand theworld:normal_stand
+            item modify entity @s[tag=!theworld.nerfed] weapon.offhand theworld:stand
+            item modify entity @s[tag=theworld.nerfed] weapon.offhand theworld:stand_nerfed
+            # execute unless data entity @s equipment.offhand.components."minecraft:use_remainder" run function fill_remainder {slot:"weapon.offhand"}
+        }
+    }
+
+    function fill_remainder {
+
+        summon item_display ~ ~ ~ {Tags:["theworld.fill_remainder"],item:{id:"stick",count:1}}
+        $item replace entity @n[type=item_display,tag=theworld.fill_remainder,distance=0..0.1] contents from entity @s $(slot)
+        data modify entity @n[type=item_display,tag=theworld.fill_remainder,distance=0..0.1] item.components."minecraft:use_remainder" set from storage theworld:main replace_item
+        $item replace entity @s $(slot) from entity @n[type=item_display,tag=theworld.fill_remainder,distance=0..0.1] contents
+        kill @n[type=item_display,tag=theworld.fill_remainder]
+    }
+
+    function normal_use {
+        advancement revoke @s only theworld:normal_use
+        scoreboard players add @s[tag=theworld.nerfed] theworld.nerfed 1
+        execute if score @s[tag=theworld.nerfed] theworld.nerfed matches 30.. run return run {
+            tag @s remove theworld.stand_user
+            tag @s remove theworld.nerfed
+        }
+        function toggle_infinite
+        execute at @s rotated as @s run function ../teleport/main
+    }
+    function melee_use {
+        advancement revoke @s only theworld:melee_use
+        scoreboard players add @s[tag=theworld.nerfed] theworld.nerfed 10
+        execute if score @s[tag=theworld.nerfed] theworld.nerfed matches 30.. run return run {
+            tag @s remove theworld.stand_user
+            tag @s remove theworld.nerfed
+        }
+        function toggle_infinite
+        execute at @s rotated as @s run function ../muda_muda/summon
+    }
+    function special_use {
+        advancement revoke @s only theworld:special_use
+        scoreboard players add @s[tag=theworld.nerfed] theworld.nerfed 3
+        execute if score @s[tag=theworld.nerfed] theworld.nerfed matches 30.. run return run {
+            tag @s remove theworld.stand_user
+            tag @s remove theworld.nerfed
+        }
+        function toggle_infinite
+        execute at @s rotated as @s run function ../aj_summon
+    }
+
+
+    function toggle_infinite {
+        execute if predicate theworld:mainhand_stand unless data entity @s SelectedItem.components."minecraft:custom_data"{infinite_item:1b} run return run item modify entity @s weapon.mainhand theworld:infinite_item_true
+        execute if predicate theworld:mainhand_stand if data entity @s SelectedItem.components."minecraft:custom_data"{infinite_item:1b} run return run item modify entity @s weapon.mainhand theworld:infinite_item_false
+
+        execute if predicate theworld:offhand_stand unless data entity @s equipment.offhand.components."minecraft:custom_data"{infinite_item:1b} run return run item modify entity @s weapon.offhand theworld:infinite_item_true
+        execute if predicate theworld:offhand_stand if data entity @s equipment.offhand.components."minecraft:custom_data"{infinite_item:1b} run return run item modify entity @s weapon.offhand theworld:infinite_item_false
+    }
+
+
+}
+
+
+
+predicate mainhand_stand {
+    "condition": "minecraft:entity_properties",
+    "entity": "this",
+    "predicate": {
+        "equipment": {
+            "mainhand": {
+                "items": "minecraft:beetroot_soup",
+                "components": {
+                    "minecraft:item_model":"theworld:armor_stand"
+
+                }
+            }
+        }
+    }
+}
+
+predicate offhand_stand {
+    "condition": "minecraft:entity_properties",
+    "entity": "this",
+    "predicate": {
+        "equipment": {
+            "offhand": {
+                "items": "minecraft:beetroot_soup",
+                "components": {
+                    "minecraft:item_model":"theworld:armor_stand"
+                }
+            }
+        }
+    }
+}
+
+advancement normal_use {
+    "criteria": {
+        "a": {
+            "trigger": "minecraft:consume_item",
+            "conditions": {
+                "player": {
+                    "type_specific": {
+                        "type": "minecraft:player",
+                        "input": {
+                            "sneak": false,
+                            "sprint": false
+                        }
+                    }
+                },
+                "item": {
+                    "items": "minecraft:beetroot_soup",
+                    "components": {
+                        "minecraft:item_model":"theworld:armor_stand"
+                    }
+                }
+            }
+        }
+    },
+    "requirements": [
+        [
+            "a"
+        ]
+    ],
+    "rewards": {
+        "function": "theworld:stand_item/normal_use"
+    }
+}
+
+advancement melee_use {
+    "criteria": {
+        "a": {
+            "trigger": "minecraft:consume_item",
+            "conditions": {
+                "player": {
+                    "type_specific": {
+                        "type": "minecraft:player",
+                        "input": {
+                            "sneak": false,
+                            "sprint": true
+                        }
+                    }
+                },
+                "item": {
+                    "items": "minecraft:beetroot_soup",
+                    "components": {
+                        "minecraft:item_model":"theworld:armor_stand"
+                    }
+                }
+            }
+        }
+    },
+    "requirements": [
+        [
+            "a"
+        ]
+    ],
+    "rewards": {
+        "function": "theworld:stand_item/melee_use"
+    }
+}
+
+advancement special_use {
+    "criteria": {
+        "a": {
+            "trigger": "minecraft:consume_item",
+            "conditions": {
+                "player": {
+                    "type_specific": {
+                        "type": "minecraft:player",
+                        "input": {
+                            "sneak": true
+                        }
+                    }
+                },
+                "item": {
+                    "items": "minecraft:beetroot_soup",
+                    "components": {
+                        "minecraft:item_model":"theworld:armor_stand"
+                    }
+                }
+            }
+        }
+    },
+    "requirements": [
+        [
+            "a"
+        ]
+    ],
+    "rewards": {
+        "function": "theworld:stand_item/special_use"
+    }
+}
+
+advancement player_tick {
+    "criteria": {
+        "a": {
+            "trigger": "minecraft:tick",
+            "conditions": {
+                "player": {
+                    "equipment": {
+                        "mainhand": {
+                            "items": "minecraft:beetroot_soup",
+                            "components": {
+                                "minecraft:item_model":"theworld:armor_stand"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "b": {
+            "trigger": "minecraft:tick",
+            "conditions": {
+                "player": {
+                    "equipment": {
+                        "offhand": {
+                            "items": "minecraft:beetroot_soup",
+                            "components": {
+                                "minecraft:item_model":"theworld:armor_stand"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "requirements": [
+        [
+            "a",
+            "b"
+        ]
+    ],
+    "rewards": {
+        "function": "theworld:stand_item/as_player"
+    }
+}
+
+recipe stand_arrow {
+    "type": "minecraft:crafting_shaped",
+    "ingredients": [],
+    "category": "equipment",
+    "pattern": [
+        " gn",
+        " ig",
+        "s  "
+    ],
+    "key": {
+        "g": [
+            "minecraft:gold_ingot"
+        ],
+        "i": [
+            "iron_ingot"
+        ],
+        "n": [
+            "netherite_ingot"
+        ],
+        "s": [
+            "minecraft:stick"
+        ]
+    },
+    "result": {
+        "id": "minecraft:tipped_arrow",
+        "components": {
+            "minecraft:item_model": "theworld:stand_arrow",
+            "minecraft:item_name": "Stand Arrow",
+            "minecraft:lore": [
+                "It looks very old."
+            ],
+            "minecraft:potion_contents": {
+                "custom_effects": [
+                    {
+                        "id": "unluck",
+                        "amplifier": 50,
+                        "duration": 1000,
+                        "show_icon": false,
+                        "show_particles": false
+                    }
+                ],
+                "custom_name": "standarrow"
+            },
+            "minecraft:tooltip_display": {
+                "hidden_components": [
+                    "potion_contents"
+                ]
+            },
+            "minecraft:max_stack_size": 1
+        }
+    }
+}
+
+item_modifier infinite_item_true {
+	"function": "minecraft:set_custom_data",
+	"tag": {
+		"infinite_item": true
+	},
+	"conditions": []
+}
+
+item_modifier infinite_item_false {
+	"function": "minecraft:set_custom_data",
+	"tag": {
+		"infinite_item": false
+	},
+	"conditions": []
+}
+
+
+dir knife {
+    function give {
+        give @s beetroot_soup[!food,!use_remainder,max_stack_size=16,item_model="theworld:knife",item_name="Throwable Knife",attribute_modifiers=[{type:"attack_damage",amount:2.0,id:"minecraft:base_attack_damage",operation:"add_value",slot:"mainhand"},{type:"attack_speed",amount:-1.85,id:"minecraft:base_attack_speed",operation:"add_value",slot:"mainhand"}],damage_type="theworld:knife",weapon={},tool={can_destroy_blocks_in_creative:false,damage_per_block:2,rules:[]},consumable={animation:"trident",consume_seconds:0.01,has_consume_particles:false,sound:"intentionally_empty"},use_cooldown={seconds:0.7,cooldown_group:"theworld:knife"}]
+    }
+    
+    function throw {
+        advancement revoke @s only theworld:throw_knife
+        playsound minecraft:item.trident.throw player @a[distance=0..32] ~ ~1.5 ~ 1.0 1.3 0.0
+        execute positioned 0.0 0.0 0.0 positioned ^ ^ ^1.5 summon marker run {
+            data modify storage theworld:main knife.motion set from entity @s Pos
+            kill @s
+        }
+        execute positioned ~ ~1.5 ~ positioned ^ ^ ^0.3 run { with storage theworld:main knife
+            $summon snowball ~ ~ ~ {Tags:["theworld.knife","theworld.knife.snowball"],Item:{id:"iron_ingot",count:1,components:{"minecraft:item_model":"theworld:empty"}},Passengers:[{id:"item_display",Tags:["theworld.knife","theworld.knife.display"],transformation:{translation: [0.0f, 0.0f, 0.0f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [0.7,0.7,0.7], left_rotation: [0.65328145f, -0.2705981f, -0.65328145f, 0.2705981f]},teleport_duration:1,item:{id:"beetroot_soup",count:1,components:{"minecraft:item_model":"theworld:knife"}}}],Motion:$(motion)}
+        }
+    }
+}
+
+advancement throw_knife {
+	"criteria": {
+		"a": {
+			"trigger": "minecraft:consume_item",
+			"conditions": {
+				"item": {
+					"items": "beetroot_soup",
+					"components": {
+						"minecraft:item_model": "theworld:knife"
+					}
+				}
+			}
+		}
+	},
+	"requirements": [
+		[
+			"a"
+		]
+	],
+	"rewards": {
+		"function": "theworld:knife/throw"
+	}
+}
+
+recipe knife {
+    "type": "minecraft:crafting_shaped",
+    "category": "equipment",
+    "pattern": [
+        "i",
+        "s"
+    ],
+    "key": {
+        "i": [
+            "iron_ingot"
+        ],
+        "s": [
+            "stick"
+        ]
+    },
+    "result": {
+        "id": "minecraft:beetroot_soup",
+        "count": 3,
+        "components": {
+            "!minecraft:food": {},
+            "!minecraft:use_remainder": {},
+            "minecraft:max_stack_size": 16,
+            "minecraft:item_model": "theworld:knife",
+            "minecraft:item_name": "Throwable Knife",
+            "minecraft:attribute_modifiers": [
+                {
+                    "type": "attack_damage",
+                    "amount": 2,
+                    "id": "minecraft:base_attack_damage",
+                    "operation": "add_value",
+                    "slot": "mainhand"
+                },
+                {
+                    "type": "attack_speed",
+                    "amount": -1.85,
+                    "id": "minecraft:base_attack_speed",
+                    "operation": "add_value",
+                    "slot": "mainhand"
+                }
+            ],
+            "minecraft:damage_type": "theworld:knife",
+            "minecraft:weapon": {},
+            "minecraft:tool": {
+                "can_destroy_blocks_in_creative": false,
+                "damage_per_block": 2,
+                "rules": []
+            },
+            "minecraft:consumable": {
+                "animation": "trident",
+                "consume_seconds": 0.01,
+                "has_consume_particles": false,
+                "sound": "intentionally_empty"
+            },
+            "minecraft:use_cooldown": {
+                "seconds": 0.7,
+                "cooldown_group": "theworld:knife"
+            }
+        }
+    }
+}
+advancement knife_recipe {
+	"criteria": {
+		"a": {
+			"trigger": "minecraft:inventory_changed",
+			"conditions": {
+				"items": [
+					{
+						"items": "iron_ingot"
+					}
+				]
+			}
+		},
+		"b": {
+			"trigger": "minecraft:inventory_changed",
+			"conditions": {
+				"items": [
+					{
+						"items": "stick"
+					}
+				]
+			}
+		}
+	},
+	"requirements": [
+		[
+			"a"
+		],
+		[
+			"b"
+		]
+	],
+	"rewards": {
+		"recipes": [
+			"theworld:knife"
+		]
+	}
+}

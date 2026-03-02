@@ -1,0 +1,3 @@
+# Generated with MC-Build
+
+give @s beetroot_soup[!food,!use_remainder,max_stack_size=16,item_model="theworld:knife",item_name="Throwable Knife",attribute_modifiers=[{type:"attack_damage",amount:2.0,id:"minecraft:base_attack_damage",operation:"add_value",slot:"mainhand"},{type:"attack_speed",amount:-1.85,id:"minecraft:base_attack_speed",operation:"add_value",slot:"mainhand"}],damage_type="theworld:knife",weapon={},tool={can_destroy_blocks_in_creative:false,damage_per_block:2,rules:[]},consumable={animation:"trident",consume_seconds:0.01,has_consume_particles:false,sound:"intentionally_empty"},use_cooldown={seconds:0.7,cooldown_group:"theworld:knife"}]

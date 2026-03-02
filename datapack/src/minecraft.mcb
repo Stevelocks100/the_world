@@ -1,0 +1,9 @@
+tag function tick {
+    animated_java:global/on_tick
+    
+}
+tag function load {
+    #animated_java:global/on_load
+    animated_java:global/internal/gu/load
+    animated_java:global/on_load
+}

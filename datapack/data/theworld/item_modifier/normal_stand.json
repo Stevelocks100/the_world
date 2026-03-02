@@ -1,0 +1,10 @@
+{
+    "function": "minecraft:set_custom_model_data",
+    "strings": {
+        "values": [
+            "normal"
+        ],
+        "mode": "replace_all"
+    },
+    "conditions": []
+}
